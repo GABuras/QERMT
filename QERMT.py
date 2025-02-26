@@ -4,7 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
-from enum import(Enum)
+import matplotlib.ticker as mtick
 
 
 # use tkinter for gui data collection?
@@ -45,7 +45,7 @@ if not loadingData:
     data = []
     # print(tabulate(data, headers=header, tablefmt="grid"))
     votesCast = 0
-    marginOfVictory = 0
+    marginOfVictoryVotes = 0
 
     with open(electionID + "Data.csv", 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -53,7 +53,7 @@ if not loadingData:
         writer.writerows(data)
 
     metaHeader = ["Election ID", "Number of Votes Cast", "Margin of Victory"]
-    metaData = [electionID, votesCast, marginOfVictory]
+    metaData = [electionID, votesCast, marginOfVictoryVotes]
     with open(electionID + "Meta.csv", 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(metaHeader)
@@ -90,8 +90,8 @@ if loadingData:
         # print(electionID)
         votesCast = int(metaData[1])
         # print(votesCast)
-        marginOfVictory = int(metaData[2])
-        # print(marginOfVictory)
+        marginOfVictoryVotes = int(metaData[2])
+        # print(marginOfVictoryVotes)
 
 
 # Doing the math
@@ -141,7 +141,9 @@ for s in range(numberOfSimulations):
 
 # Draw loss exceedance curve
 # TODO make x axis exponential
-xValues = np.linspace(0, 100, 1001)
+
+marginOfVictoryPercentage = marginOfVictoryVotes / votesCast
+xValues = np.linspace(0, marginOfVictoryPercentage + 0.01, 151)
 # print(xValues)
 
 yValues = []
@@ -155,8 +157,34 @@ for x in xValues:
 
 # print(yValues)
 
+marginOfVictoryY = 0
+for t in totalImpacts:
+    if t > marginOfVictoryVotes:
+        marginOfVictoryY += 1
+marginOfVictoryY = marginOfVictoryY/numberOfSimulations
+
+
+
+plt.title("Loss Exceedance Curve")
+plt.xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
+plt.ylabel("Chance of Margin of Manipulation or Greator")
 plt.plot(xValues, yValues)
+
+ax = plt.gca()
+ax.xaxis.set_major_formatter(mtick.PercentFormatter(1))
+ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+
+plt.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
+plt.tight_layout()
+plt.ylim(0, max(yValues) + 0.01)
+plt.xlim(min(xValues), max(xValues))
+
+# Label Margin of Victory Percentage
+ax.annotate("Margin of Victory\n(%.4f%%, %.4f%%)"%(marginOfVictoryPercentage*100, marginOfVictoryY*100), xy=(marginOfVictoryPercentage, marginOfVictoryY), xytext=(marginOfVictoryPercentage-0.005, marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
+
 plt.show()
+
+
 
 # TODO Test with sample data from book
 
