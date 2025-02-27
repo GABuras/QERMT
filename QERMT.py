@@ -1,4 +1,5 @@
 # Author: George Adler Buras
+import DataHandling
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -94,19 +95,13 @@ class MainWindow(QMainWindow):
         self.standardBtnWidth = 150
         self.standardBtnHeight = 50
 
-        self.addBtn = QPushButton("Add Row")
-        self.addBtn.clicked.connect(self.executeAddBtnClicked)
-        self.addBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
-        self.standardBtnFont = self.addBtn.font()
+        self.analyzeBtn = QPushButton("Analyze")
+        self.analyzeBtn.clicked.connect(self.executeAnalyzeBtnClicked)
+        self.analyzeBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        self.standardBtnFont = self.analyzeBtn.font()
         self.standardBtnFont.setPointSize(15)
-        self.addBtn.setFont(self.standardBtnFont)
-        self.buttonsLayout.addWidget(self.addBtn)
-
-        self.reduceBtn = QPushButton("Reduce Rows")
-        self.reduceBtn.clicked.connect(self.executeReduceBtnClicked)
-        self.reduceBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
-        self.reduceBtn.setFont(self.standardBtnFont)
-        self.buttonsLayout.addWidget(self.reduceBtn)
+        self.analyzeBtn.setFont(self.standardBtnFont)
+        self.buttonsLayout.addWidget(self.analyzeBtn)
 
         self.saveBtn = QPushButton("Save")
         self.saveBtn.clicked.connect(self.executeSaveBtnClicked)
@@ -120,23 +115,32 @@ class MainWindow(QMainWindow):
         self.loadBtn.setFont(self.standardBtnFont)
         self.buttonsLayout.addWidget(self.loadBtn)
 
-        self.analyzeBtn = QPushButton("Analyze")
-        self.analyzeBtn.clicked.connect(self.executeAnalyzeBtnClicked)
-        self.analyzeBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
-        self.analyzeBtn.setFont(self.standardBtnFont)
-        self.buttonsLayout.addWidget(self.analyzeBtn)
+        self.deleteBtn = QPushButton("Delete")
+        self.deleteBtn.clicked.connect(self.executeDeleteBtnClicked)
+        self.deleteBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        self.deleteBtn.setFont(self.standardBtnFont)
+        self.buttonsLayout.addWidget(self.deleteBtn)
+
+        self.addBtn = QPushButton("Add Row")
+        self.addBtn.clicked.connect(self.executeAddBtnClicked)
+        self.addBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        self.addBtn.setFont(self.standardBtnFont)
+        self.buttonsLayout.addWidget(self.addBtn)
+
+        self.reduceBtn = QPushButton("Reduce Rows")
+        self.reduceBtn.clicked.connect(self.executeReduceBtnClicked)
+        self.reduceBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        self.reduceBtn.setFont(self.standardBtnFont)
+        self.buttonsLayout.addWidget(self.reduceBtn)
 
         self.widget = QWidget()
         self.widget.setLayout(self.layout)
         self.setCentralWidget(self.widget)
 
-    def executeAddBtnClicked(self):
-        print("Add button clicked")
-        self.dataTable.insertRow(self.dataTable.rowCount())
-
-    def executeReduceBtnClicked(self):
-        print("Reduce button clicked")
-        self.dataTable.removeRow(self.dataTable.rowCount()-1)
+    def executeAnalyzeBtnClicked(self):
+        print("Analyze button clicked")
+        # TODO Read all data into LEC Generator
+        DataHandling.analyzeData(DataHandling.loadData("sample"))
 
     def executeSaveBtnClicked(self):
         print("Save button clicked")
@@ -146,9 +150,17 @@ class MainWindow(QMainWindow):
         print("Load button clicked")
         # TODO Load all data from csv files
 
-    def executeAnalyzeBtnClicked(self):
-        print("Analyze button clicked")
-        # TODO Read all data into LEC Generator
+    def executeDeleteBtnClicked(self):
+        print("Delete button clicked")
+        # TODO Delete selected electionID data
+
+    def executeAddBtnClicked(self):
+        print("Add button clicked")
+        self.dataTable.insertRow(self.dataTable.rowCount())
+
+    def executeReduceBtnClicked(self):
+        print("Reduce button clicked")
+        self.dataTable.removeRow(self.dataTable.rowCount()-1)
 
 
 
@@ -162,7 +174,7 @@ if __name__ == '__main__':
 
     # Create and display main window
     window = MainWindow()
-    window.show()
+    window.showMaximized()
 
     # Start the event loop.
     app.exec()

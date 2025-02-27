@@ -4,12 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import matplotlib.ticker as mtick
+import os
 # from tabulate import tabulate
 
 
 # TODO Create GUI for data collection
 
-# TODO Save and read a file that lists saved electionIDs?
+# TODO Better error handling (especially for files)
 
 
 # electionID = "sample"
@@ -18,10 +19,9 @@ import matplotlib.ticker as mtick
 # votesCounted = 0
 # marginOfVictoryVotes = 0
 
-def saveData(electionID, votesCounted, marginOfVictoryVotes, data):
-    # Saving data
+# saves data to csv files
+def saveData(electionID: str, votesCounted: int, marginOfVictoryVotes: int, data):
     # TODO encrypt saved data
-    # TODO fill data from GUI
 
     # Index:
     # 0: Risk ID
@@ -33,24 +33,38 @@ def saveData(electionID, votesCounted, marginOfVictoryVotes, data):
     # 6: Total Cost of Controls
     # 7: Control Effectiveness
     dataHeader = ["Risk ID", "Risk Name", "Type of Vote Manipulation (Adding, Subtracting, or Changing)", "Probability of Manipulation Over 1 Election Cycle", "Lower Bound of Impact (95% Chance Value Is Higher)", "Upper Bound of Impact (95% Chance Value Is Lower)", "Total Cost of Controls", "Control Effectiveness"]
-    with open(electionID + "Data.csv", 'w', newline='') as csvfile:
+    with open(f"./data/{electionID}Data.csv", 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(dataHeader)
         writer.writerows(data)
 
     metaHeader = ["Election ID", "Number of Votes Counted", "Margin of Victory"]
     metaData = [electionID, votesCounted, marginOfVictoryVotes]
-    with open(electionID + "Meta.csv", 'w', newline='') as csvfile:
+    with open(f"./data/{electionID}Meta.csv", 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(metaHeader)
         writer.writerow(metaData)
 
-# Loads saved data, returns dataProfile
+    # TODO there is probably a better way to do this?
+    with open(f"./data/savedElectionIDs.csv", "r+", newline='') as csvfile:
+        savedElectionIDs = csv.reader(csvfile)
+        alreadyExists = False
+        for row in savedElectionIDs:
+            if electionID in row:
+                alreadyExists = True
+        
+        # print(alreadyExists)
+        
+        if not alreadyExists:
+            writer = csv.writer(csvfile)
+            writer.writerow([electionID])
+
+
+# Loads saved data from csv files, returns dataProfile
 def loadData(electionID):
     # TODO decrypt saved data
-    with open(electionID + "Data.csv", 'r') as csvfile:
-        contents = csv.reader(csvfile)
-        contents = list(contents)
+    with open(f"./data/{electionID}Data.csv", 'r') as csvfile:
+        contents = list(csv.reader(csvfile))
         # header = contents[0] # unnecessary/redundant
         # print(header) 
         data = contents[1:]
@@ -65,9 +79,8 @@ def loadData(electionID):
             risk[7] = float(risk[7])
         # print(data)
 
-    with open(electionID + "Meta.csv", 'r') as csvfile:
-        contents = csv.reader(csvfile)
-        contents = list(contents)
+    with open(f"./data/{electionID}Meta.csv", 'r') as csvfile:
+        contents = list(csv.reader(csvfile))
         # metaHeader = contents[0] 
         # print(metaHeader)
         metaData = contents[1]
@@ -80,6 +93,31 @@ def loadData(electionID):
         # print(marginOfVictoryVotes)
     
     return [votesCounted, marginOfVictoryVotes, data]
+
+def deleteData(electionID):
+    # TODO delete data
+    updatedList = []
+    with open(f"./data/savedElectionIDs.csv", "r", newline='') as csvfile:
+        savedElectionIDs = csv.reader(csvfile)
+        for row in savedElectionIDs:
+            if electionID not in row:
+                updatedList.append(row)
+
+    with open(f"./data/savedElectionIDs.csv", "w", newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerows(updatedList)
+        
+    # delete electionID + Data.csv
+    if os.path.exists(f"./data/{electionID}Data.csv"):
+        os.remove(f"./data/{electionID}Data.csv")
+    else:
+        print(f"{electionID}Data.csv does not exist")
+    
+    # delete electionID + Meta.csv
+    if os.path.exists(f"./data/{electionID}Meta.csv"):
+        os.remove(f"./data/{electionID}Meta.csv")
+    else:
+        print(f"{electionID}Meta.csv does not exist")
 
 
 # dataProfile is [votesCounted, marginOfVictoryVotes, data], same as returned by loadData(...)
@@ -162,7 +200,7 @@ def analyzeData(dataProfile):
 
     plt.title("Loss Exceedance Curve")
     plt.xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
-    plt.ylabel("Chance of Margin of Manipulation or Greator")
+    plt.ylabel("Chance of Margin of Manipulation or Greater")
     plt.plot(xValues, yValues)
 
     ax = plt.gca()
@@ -183,5 +221,13 @@ def analyzeData(dataProfile):
 
     # TODO Test with sample data from book
 
+    # TODO Doublecheck everything for spelling
+
 if __name__ == '__main__':
-    analyzeData(loadData("sample"))
+    # analyzeData(loadData("sample"))
+
+    # saveData("sample", votesCounted, marginOfVictoryVotes, data)
+
+    # deleteData("test")
+
+    pass
