@@ -10,10 +10,10 @@ from PyQt6.QtWidgets import (
     QWidget,
     QLineEdit,
     QLabel,
-    QTableWidget
+    QTableWidget,
+    QComboBox
 )
-
-# from PyQt6.QtGui import QFont
+import csv
 
 # Subclass QMainWindow to customize application's main window
 class MainWindow(QMainWindow):
@@ -51,6 +51,7 @@ class MainWindow(QMainWindow):
         self.votesCountedLabel.setFont(standardMetaDataFont)
         self.metaDataEntryLayout.addWidget(self.votesCountedLabel)
 
+        # TODO input validation
         self.votesCountedField = QLineEdit()
         self.votesCountedField.setPlaceholderText("e.g. 50000")
         self.votesCountedField.setFixedSize(self.standardLineEditWidth, self.standardLineEditHeight)
@@ -64,6 +65,7 @@ class MainWindow(QMainWindow):
         self.marginOfVictoryVotesLabel.setToolTip("(First Place Votes - Second Place Votes)")
         self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesLabel)
 
+        # TODO input validation
         self.marginOfVictoryVotesField = QLineEdit()
         self.marginOfVictoryVotesField.setPlaceholderText("e.g. 1000")
         self.marginOfVictoryVotesField.setFixedSize(self.standardLineEditWidth, self.standardLineEditHeight)
@@ -115,11 +117,21 @@ class MainWindow(QMainWindow):
         self.loadBtn.setFont(self.standardBtnFont)
         self.buttonsLayout.addWidget(self.loadBtn)
 
+        # TODO Improve visual clarity
+        # electionID picker for loadBtn and deleteBtn
+        self.electionIDDropdown = QComboBox()
+        self.electionIDDropdown.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        with open(f"./data/savedElectionIDs.csv", "r", newline='') as csvfile:
+            savedElectionIDs = csv.reader(csvfile)
+            for row in savedElectionIDs:
+                self.electionIDDropdown.addItem(row[0])
+        self.buttonsLayout.addWidget(self.electionIDDropdown)
+
         self.deleteBtn = QPushButton("Delete")
         self.deleteBtn.clicked.connect(self.executeDeleteBtnClicked)
         self.deleteBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
         self.deleteBtn.setFont(self.standardBtnFont)
-        self.buttonsLayout.addWidget(self.deleteBtn)
+        self.buttonsLayout.addWidget(self.deleteBtn)        
 
         self.addBtn = QPushButton("Add Row")
         self.addBtn.clicked.connect(self.executeAddBtnClicked)
@@ -137,6 +149,8 @@ class MainWindow(QMainWindow):
         self.widget.setLayout(self.layout)
         self.setCentralWidget(self.widget)
 
+        # TODO Control ranking
+
     def executeAnalyzeBtnClicked(self):
         print("Analyze button clicked")
         # TODO Read all data into LEC Generator
@@ -152,7 +166,10 @@ class MainWindow(QMainWindow):
 
     def executeDeleteBtnClicked(self):
         print("Delete button clicked")
-        # TODO Delete selected electionID data
+        print(self.electionIDDropdown.currentText())
+        DataHandling.deleteData(self.electionIDDropdown.currentText())
+        self.electionIDDropdown.removeItem(self.electionIDDropdown.currentIndex())
+
 
     def executeAddBtnClicked(self):
         print("Add button clicked")

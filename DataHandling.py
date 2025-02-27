@@ -94,8 +94,9 @@ def loadData(electionID):
     
     return [votesCounted, marginOfVictoryVotes, data]
 
-def deleteData(electionID):
-    # TODO delete data
+# Deletes electionID from savedElectionIDs.csv and deletes the corresponding data and meta csv files
+def deleteData(electionID: str):
+    # remove electionID from savedElectionIDs
     updatedList = []
     with open(f"./data/savedElectionIDs.csv", "r", newline='') as csvfile:
         savedElectionIDs = csv.reader(csvfile)
@@ -228,6 +229,6 @@ if __name__ == '__main__':
 
     # saveData("sample", votesCounted, marginOfVictoryVotes, data)
 
-    # deleteData("test")
+    # deleteData("sample2")
 
     pass
