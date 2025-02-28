@@ -174,8 +174,7 @@ def analyzeData(dataProfile):
 
 
 
-    # Draw loss exceedance curve
-    # TODO make x axis exponential?
+    # Calculate loss exceedance curve
 
     marginOfVictoryPercentage = marginOfVictoryVotes / votesCounted
     xValues = np.linspace(0, marginOfVictoryPercentage * 1.5, 151)
@@ -198,30 +197,9 @@ def analyzeData(dataProfile):
             marginOfVictoryY += 1
     marginOfVictoryY = marginOfVictoryY/numberOfSimulations
 
-    lossExceedanceCurve = plt.figure()
+    # TODO Calculate Control Ranking
 
-    plt.title("Loss Exceedance Curve")
-    plt.xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
-    plt.ylabel("Chance of Margin of Manipulation or Greater")
-    plt.plot(xValues, yValues)
-
-    ax = plt.gca()
-    ax.xaxis.set_major_formatter(mtick.PercentFormatter(1))
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
-
-    plt.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
-    plt.tight_layout()
-    plt.ylim(0, max(yValues) + 0.01)
-    plt.xlim(min(xValues), max(xValues))
-
-    # Label Margin of Victory Percentage
-    ax.annotate("Margin of Victory\n(%.4f%%, %.4f%%)"%(marginOfVictoryPercentage*100, marginOfVictoryY*100), xy=(marginOfVictoryPercentage, marginOfVictoryY), xytext=(marginOfVictoryPercentage-0.005, marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
-
-
-    # plt.show()
-    # lossExceedanceCurve.show()
-
-    return lossExceedanceCurve
+    return [xValues, yValues, marginOfVictoryPercentage, marginOfVictoryY]
 
     # TODO Add second x axis scale for "Manipulated Votes"
 

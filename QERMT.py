@@ -18,6 +18,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIntValidator
 import csv
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+import matplotlib.ticker as mtick
+from matplotlib.text import Annotation
 
 # TODO Either make table stretech all the way across, or move buttons to right side
 
@@ -205,16 +208,7 @@ class EntryWindow(QMainWindow):
     # TODO Create a new page with LEC and control ranking and swap to it
     # Read all entered data into LEC Generator
     def executeAnalyzeBtnClicked(self):
-        # self.lossExceedanceCurve = FigureCanvas(DataHandling.analyzeData(self.getEnteredData()))
-
-        # self.graphLayout = QVBoxLayout()
-        # self.graphLayout.addWidget(self.lossExceedanceCurve)
-
-        # self.graphToolbar = NavigationToolbar(self.lossExceedanceCurve, self)
-        # self.graphLayout.addWidget(self.graphToolbar)
-
-        # self.dataEntryLayout.addLayout(self.graphLayout)
-
+        AnalysisWindow.displayInfo(analysisPage)
         pages.setCurrentWidget(analysisPage)
 
     # Save all entered data 
@@ -271,14 +265,36 @@ class AnalysisWindow(QMainWindow):
 
         self.analysisLayout = QVBoxLayout()
 
+        # Information
         self.infoLayout = QHBoxLayout()
         self.analysisLayout.addLayout(self.infoLayout)
 
-        # TODO Display LEC
+
+        # TODO Consider ...Figure(tight_layout=True)
+        self.lossExceedanceCurveCanvas = FigureCanvas(Figure())
+        self.lossExceedanceCurveAx = self.lossExceedanceCurveCanvas.figure.subplots()
+        self.xValues = []
+        self.yValues = []
+        self.line, = self.lossExceedanceCurveAx.plot(self.xValues, self.yValues)
+
+        # TODO LEC Formatting
+        # self.lossExceedanceCurveAx.annotate("Margin of Victory\n(%.4f%%, %.4f%%)"%(marginOfVictoryPercentage*100, marginOfVictoryY*100), xy=(marginOfVictoryPercentage, marginOfVictoryY), xytext=(marginOfVictoryPercentage-0.005, marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
+        self.lossExceedanceCurveAx.set_title("Loss Exceedance Curve")
+        self.lossExceedanceCurveAx.set_xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
+        self.lossExceedanceCurveAx.set_ylabel("Chance of Margin of Manipulation or Greater")
+        self.lossExceedanceCurveAx.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
+
+        self.marginOfVictoryAnnotation = Annotation("temp", (0,0))
+        self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
 
 
-        # TODO Display Control Ranking
-        
+        self.graphLayout = QVBoxLayout()
+        self.graphLayout.addWidget(self.lossExceedanceCurveCanvas)
+
+        self.graphToolbar = NavigationToolbar(self.lossExceedanceCurveCanvas, self)
+        self.graphLayout.addWidget(self.graphToolbar)
+
+        self.infoLayout.addLayout(self.graphLayout)
 
         # Buttons
         self.buttonsLayout = QHBoxLayout()
@@ -300,6 +316,38 @@ class AnalysisWindow(QMainWindow):
         self.widget = QWidget()
         self.widget.setLayout(self.analysisLayout)
         self.setCentralWidget(self.widget)
+
+    def displayInfo(self):
+        self.dataProfile = entryPage.getEnteredData()
+        self.votesCounted = self.dataProfile[0]
+        self.marginOfVictoryVotes = self.dataProfile[1]
+
+        # Loss Exceedance Curve
+        graphValues = DataHandling.analyzeData(self.dataProfile)
+        self.xValues = graphValues[0] 
+        self.yValues = graphValues[1]
+        self.marginOfVictoryPercentage = graphValues[2]
+        self.marginOfVictoryY = graphValues[3]
+
+        self.line.set_data(self.xValues, self.yValues)
+
+        self.lossExceedanceCurveAx.set_xlim(min(self.xValues), max(self.xValues))
+        self.lossExceedanceCurveAx.set_ylim(0, max(self.yValues) + 0.01)
+
+        self.lossExceedanceCurveAx.xaxis.set_major_formatter(mtick.PercentFormatter(1))
+        self.lossExceedanceCurveAx.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+
+        # Label Margin of Victory Percentage
+        self.marginOfVictoryAnnotation.remove()
+        self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.4f%%, %.4f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=(self.marginOfVictoryPercentage-0.005, self.marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
+        self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
+
+        self.line.figure.canvas.draw()
+
+        # TODO Replace graph instead of adding another one
+        # Can I simply move everything to init except lossExceedance Curve Update?
+
+        # TODO Display Control Ranking
 
 
 
