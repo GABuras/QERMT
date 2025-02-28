@@ -11,27 +11,41 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QLabel,
     QTableWidget,
-    QComboBox
+    QTableWidgetItem,
+    QComboBox,
+    QStackedWidget
 )
+from PyQt6.QtGui import QIntValidator
 import csv
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 
-# Subclass QMainWindow to customize application's main window
-class MainWindow(QMainWindow):
+# TODO Either make table stretech all the way across, or move buttons to right side
+
+# TODO Create more breathing room
+
+# Subclass QMainWindow to customize application's data entry window
+class EntryWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("QERMT")
 
-        self.layout = QVBoxLayout()
+        self.entryLayout = QVBoxLayout()
 
         # Meta Data Entry
         self.metaDataEntryLayout = QHBoxLayout()
-        self.layout.addLayout(self.metaDataEntryLayout)
+        self.entryLayout.addLayout(self.metaDataEntryLayout)
 
         self.metaSpacingLabel = QLabel("")
         standardMetaDataFont = self.metaSpacingLabel.font()
         standardMetaDataFont.setPointSize(15)
         self.metaSpacingLabel.setFont(standardMetaDataFont)
         self.metaDataEntryLayout.addWidget(self.metaSpacingLabel)
+
+        # TODO do I need these labels, or can I do like:
+        # layout = QFormLayout()
+        # layout.addRow("Integers:", self.int_line_edit)
+        # layout.addRow("Uppercase letters:", self.uppercase_line_edit)
+        # layout.addRow("Signal:", self.signal_label)
+        # self.setLayout(layout)
 
         self.electionIDLabel = QLabel("Election ID:")
         self.electionIDLabel.setFont(standardMetaDataFont)
@@ -40,6 +54,7 @@ class MainWindow(QMainWindow):
         self.standardLineEditWidth = 175
         self.standardLineEditHeight = 30
 
+        # TODO only accept str
         self.electionIDField = QLineEdit()
         self.electionIDField.setPlaceholderText("e.g. mm/dd/yy Race")
         self.electionIDField.setFixedSize(self.standardLineEditWidth, self.standardLineEditHeight)
@@ -51,8 +66,10 @@ class MainWindow(QMainWindow):
         self.votesCountedLabel.setFont(standardMetaDataFont)
         self.metaDataEntryLayout.addWidget(self.votesCountedLabel)
 
-        # TODO input validation
+        # Max value is 2147483647 because signed int. To increase, must extend QIntValidator
+        # https://forum.qt.io/topic/115662/qintvalidator-for-unsigned-long-values/3
         self.votesCountedField = QLineEdit()
+        self.votesCountedField.setValidator(QIntValidator())
         self.votesCountedField.setPlaceholderText("e.g. 50000")
         self.votesCountedField.setFixedSize(self.standardLineEditWidth, self.standardLineEditHeight)
         self.metaDataEntryLayout.addWidget(self.votesCountedField)
@@ -65,8 +82,9 @@ class MainWindow(QMainWindow):
         self.marginOfVictoryVotesLabel.setToolTip("(First Place Votes - Second Place Votes)")
         self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesLabel)
 
-        # TODO input validation
+        # Max value is 2147483647 because signed int. To increase, must extend QIntValidator
         self.marginOfVictoryVotesField = QLineEdit()
+        self.marginOfVictoryVotesField.setValidator(QIntValidator())
         self.marginOfVictoryVotesField.setPlaceholderText("e.g. 1000")
         self.marginOfVictoryVotesField.setFixedSize(self.standardLineEditWidth, self.standardLineEditHeight)
         self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesField)
@@ -75,14 +93,14 @@ class MainWindow(QMainWindow):
 
         # Data Entry
         # TODO Validate data being entered (QItemDelegate? inputmask? for line edit)
-        self.dataEntryLayout = QVBoxLayout()
-        self.layout.addLayout(self.dataEntryLayout)
+        self.dataEntryLayout = QHBoxLayout()
+        self.entryLayout.addLayout(self.dataEntryLayout)
         
         self.dataTable = QTableWidget()
-        self.dataEntryLayout.addWidget(self.dataTable)
 
         self.dataTable.setColumnCount(7)
-        self.dataTable.setRowCount(20)
+        self.initialRowCount = 20
+        self.dataTable.setRowCount(self.initialRowCount)
 
         self.dataTableHeaderLabels = ["Risk Name", "Type of Vote Manipulation\n(Adding, Subtracting, or Changing)", "Probability of Manipulation\nOver 1 Election Cycle", "Lower Bound of Impact\n(95% Chance Value Is Higher)", "Upper Bound of Impact\n(95% Chance Value Is Lower)", "Total Cost of Controls", "Control Effectiveness"]
         self.dataTable.setHorizontalHeaderLabels(self.dataTableHeaderLabels)
@@ -90,9 +108,11 @@ class MainWindow(QMainWindow):
         for c in range(len(self.dataTableHeaderLabels)):
             self.dataTable.setColumnWidth(c, 200)
 
+        self.dataEntryLayout.addWidget(self.dataTable)
+
         # Buttons
         self.buttonsLayout = QHBoxLayout()
-        self.layout.addLayout(self.buttonsLayout)
+        self.entryLayout.addLayout(self.buttonsLayout)
 
         self.standardBtnWidth = 150
         self.standardBtnHeight = 50
@@ -145,43 +165,146 @@ class MainWindow(QMainWindow):
         self.reduceBtn.setFont(self.standardBtnFont)
         self.buttonsLayout.addWidget(self.reduceBtn)
 
+        self.clearBtn = QPushButton("Clear All")
+        self.clearBtn.clicked.connect(self.executeClearBtnClicked)
+        self.clearBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        self.clearBtn.setFont(self.standardBtnFont)
+        self.buttonsLayout.addWidget(self.clearBtn)
+
+
         self.widget = QWidget()
-        self.widget.setLayout(self.layout)
+        self.widget.setLayout(self.entryLayout)
         self.setCentralWidget(self.widget)
 
-        # TODO Control ranking
+    # TODO Improve error handling
 
+    # Retreive all entered data, returns dataProfile
+    def getEnteredData(self):
+        votesCounted = int(self.votesCountedField.text())
+        marginOfVictoryVotes = int(self.marginOfVictoryVotesField.text())
+        # TODO delete excees rows 
+        # TODO error message if important columns missing data/incorrect data type
+        data = []
+        for row in range(self.dataTable.rowCount()):
+            risk = [row+1]
+            for column in range(self.dataTable.columnCount()):
+                risk.append(self.dataTable.item(row, column).text())
+            data.append(risk)
+
+        # correct data formatting
+        for risk in data:
+            risk[0] = int(risk[0])
+            risk[3] = float(risk[3])
+            risk[4] = int(risk[4])
+            risk[5] = int(risk[5])
+            risk[6] = int(risk[6])
+            risk[7] = float(risk[7])
+
+        return [votesCounted, marginOfVictoryVotes, data]
+
+    # TODO Create a new page with LEC and control ranking and swap to it
+    # Read all entered data into LEC Generator
     def executeAnalyzeBtnClicked(self):
-        print("Analyze button clicked")
-        # TODO Read all data into LEC Generator
-        DataHandling.analyzeData(DataHandling.loadData("sample"))
+        # self.lossExceedanceCurve = FigureCanvas(DataHandling.analyzeData(self.getEnteredData()))
 
+        # self.graphLayout = QVBoxLayout()
+        # self.graphLayout.addWidget(self.lossExceedanceCurve)
+
+        # self.graphToolbar = NavigationToolbar(self.lossExceedanceCurve, self)
+        # self.graphLayout.addWidget(self.graphToolbar)
+
+        # self.dataEntryLayout.addLayout(self.graphLayout)
+
+        pages.setCurrentWidget(analysisPage)
+
+    # Save all entered data 
     def executeSaveBtnClicked(self):
-        print("Save button clicked")
-        # TODO Save all data to csv files
+        electionID = self.electionIDField.text()
+        DataHandling.saveData(electionID, self.getEnteredData())
+        if(self.electionIDDropdown.findText(electionID) == -1):
+            self.electionIDDropdown.addItem(electionID)
 
+    # Load all data from csv files
     def executeLoadBtnClicked(self):
-        print("Load button clicked")
-        # TODO Load all data from csv files
-
+        dataProfile = DataHandling.loadData(self.electionIDDropdown.currentText())
+        # Set:
+        # Election ID
+        self.electionIDField.clear()
+        self.electionIDField.insert(self.electionIDDropdown.currentText()) # TODO Why is this appending instead or replacing like the others?
+        # Votes Counted
+        self.votesCountedField.clear()
+        self.votesCountedField.insert(str(dataProfile[0]))
+        # Margin of Victory
+        self.marginOfVictoryVotesField.clear()
+        self.marginOfVictoryVotesField.insert(str(dataProfile[1]))
+        # Data Table
+        data = dataProfile[2]
+        self.dataTable.clearContents()
+        self.dataTable.setRowCount(len(data))
+        for row in range(len(data)):
+            for column in range(1, len(data[0])):
+                self.dataTable.setItem(row, column-1, QTableWidgetItem(str(data[row][column])))
+                
     def executeDeleteBtnClicked(self):
-        print("Delete button clicked")
-        print(self.electionIDDropdown.currentText())
         DataHandling.deleteData(self.electionIDDropdown.currentText())
         self.electionIDDropdown.removeItem(self.electionIDDropdown.currentIndex())
+        self.executeClearBtnClicked()
+        self.dataTable.setRowCount(self.initialRowCount)
 
-
+    # TODO Change to add row below selected row; if none selected, default to bottom
     def executeAddBtnClicked(self):
-        print("Add button clicked")
         self.dataTable.insertRow(self.dataTable.rowCount())
 
+    # TODO Change to delete selected row; if none selected, default to bottom
     def executeReduceBtnClicked(self):
-        print("Reduce button clicked")
         self.dataTable.removeRow(self.dataTable.rowCount()-1)
 
+    def executeClearBtnClicked(self):
+        self.electionIDField.clear()
+        self.votesCountedField.clear()
+        self.marginOfVictoryVotesField.clear()
+        self.dataTable.clearContents()
+
+class AnalysisWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.analysisLayout = QVBoxLayout()
+
+        self.infoLayout = QHBoxLayout()
+        self.analysisLayout.addLayout(self.infoLayout)
+
+        # TODO Display LEC
+
+
+        # TODO Display Control Ranking
+        
+
+        # Buttons
+        self.buttonsLayout = QHBoxLayout()
+        self.analysisLayout.addLayout(self.buttonsLayout)
+
+        self.standardBtnWidth = 150
+        self.standardBtnHeight = 50
+
+        self.backBtn = QPushButton("Back")
+        self.backBtn.clicked.connect(self.executeBackBtnClicked)
+        self.backBtn.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
+        self.standardBtnFont = self.backBtn.font()
+        self.standardBtnFont.setPointSize(15)
+        self.backBtn.setFont(self.standardBtnFont)
+        self.analysisLayout.addWidget(self.backBtn)
+
+        # TODO Rerun Simulations Button
+
+        self.widget = QWidget()
+        self.widget.setLayout(self.analysisLayout)
+        self.setCentralWidget(self.widget)
 
 
 
+    def executeBackBtnClicked(self):
+        pages.setCurrentWidget(entryPage)
 
 
 
@@ -189,9 +312,21 @@ if __name__ == '__main__':
     # Create an instance of Qapplication
     app = QApplication([])
 
+    pages = QStackedWidget()
+    pages.setWindowTitle("QERMT")
+
+    entryPage = EntryWindow()
+    pages.addWidget(entryPage)
+
+    analysisPage =  AnalysisWindow()
+    pages.addWidget(analysisPage)
+
+    pages.setCurrentWidget(entryPage)
+    pages.showMaximized()
+
     # Create and display main window
-    window = MainWindow()
-    window.showMaximized()
+    # window = MainWindow()
+    # window.showMaximized()
 
     # Start the event loop.
     app.exec()

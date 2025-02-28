@@ -7,9 +7,6 @@ import matplotlib.ticker as mtick
 import os
 # from tabulate import tabulate
 
-
-# TODO Create GUI for data collection
-
 # TODO Better error handling (especially for files)
 
 
@@ -20,8 +17,12 @@ import os
 # marginOfVictoryVotes = 0
 
 # saves data to csv files
-def saveData(electionID: str, votesCounted: int, marginOfVictoryVotes: int, data):
+def saveData(electionID: str, dataProfile):
     # TODO encrypt saved data
+
+    votesCounted = dataProfile[0]
+    marginOfVictoryVotes = dataProfile[1]
+    data =  dataProfile[2]
 
     # Index:
     # 0: Risk ID
@@ -61,7 +62,7 @@ def saveData(electionID: str, votesCounted: int, marginOfVictoryVotes: int, data
 
 
 # Loads saved data from csv files, returns dataProfile
-def loadData(electionID):
+def loadData(electionID: str):
     # TODO decrypt saved data
     with open(f"./data/{electionID}Data.csv", 'r') as csvfile:
         contents = list(csv.reader(csvfile))
@@ -197,7 +198,7 @@ def analyzeData(dataProfile):
             marginOfVictoryY += 1
     marginOfVictoryY = marginOfVictoryY/numberOfSimulations
 
-
+    lossExceedanceCurve = plt.figure()
 
     plt.title("Loss Exceedance Curve")
     plt.xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
@@ -216,13 +217,19 @@ def analyzeData(dataProfile):
     # Label Margin of Victory Percentage
     ax.annotate("Margin of Victory\n(%.4f%%, %.4f%%)"%(marginOfVictoryPercentage*100, marginOfVictoryY*100), xy=(marginOfVictoryPercentage, marginOfVictoryY), xytext=(marginOfVictoryPercentage-0.005, marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
 
-    plt.show()
+
+    # plt.show()
+    # lossExceedanceCurve.show()
+
+    return lossExceedanceCurve
 
     # TODO Add second x axis scale for "Manipulated Votes"
 
     # TODO Test with sample data from book
 
-    # TODO Doublecheck everything for spelling
+    # TODO "QCoreApplication::exec: The event loop is already running"
+
+# TODO Doublecheck everything for spelling
 
 if __name__ == '__main__':
     # analyzeData(loadData("sample"))
