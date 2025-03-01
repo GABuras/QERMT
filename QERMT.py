@@ -97,7 +97,7 @@ class EntryWindow(QMainWindow):
         self.metaDataEntryLayout.addWidget(self.metaSpacingLabel)
 
         # Data Entry
-        # TODO Validate data being entered (QItemDelegate? inputmask? for line edit)
+        # TODO Validate data being entered. Are percentages percentages?
         self.dataEntryLayout = QHBoxLayout()
         self.entryLayout.addLayout(self.dataEntryLayout)
         
@@ -113,6 +113,10 @@ class EntryWindow(QMainWindow):
         self.dataTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         # TODO enforce % and $ on necesairy columns
+        # for row in range(self.dataTable.rowCount()):
+        #     for column in range(self.dataTable.columnCount()):
+        #         self.dataTable.item(row, column).
+                
 
         self.dataEntryLayout.addWidget(self.dataTable)
 
@@ -196,7 +200,16 @@ class EntryWindow(QMainWindow):
             QMessageBox.warning(self, "ERROR", "Margin of Victory must be filled", buttons=QMessageBox.StandardButton.Ok)
             return None
 
-        # TODO delete excees rows 
+        # Delete excees rows 
+        emptyRows = []
+        for row in range(self.dataTable.rowCount()):
+            if self.dataTable.item(row, 0) is None and self.dataTable.item(row, 1) is None and self.dataTable.item(row, 2) is None and self.dataTable.item(row, 3) is None and self.dataTable.item(row, 4) is None and self.dataTable.item(row, 5) is None and self.dataTable.item(row, 6) is None:
+                emptyRows.append(row)
+        emptyRows.reverse()
+        for row in emptyRows:
+            self.dataTable.removeRow(row)
+
+        # Read data into variable
         data = []
         for row in range(self.dataTable.rowCount()):
             risk = [row+1]
@@ -209,17 +222,33 @@ class EntryWindow(QMainWindow):
             data.append(risk)
 
         # correct data formatting
-        try:
-            for risk in data:
+        # TODO 80% to .8, after I figure out enforcing %        
+        for risk in data:
+            try:
                 risk[3] = float(risk[3])
+            except ValueError:
+                QMessageBox.warning(self, "ERROR", "Probability of Manipulation must be a percentage", buttons=QMessageBox.StandardButton.Ok)
+                return None
+            try:
                 risk[4] = int(risk[4])
+            except ValueError:
+                QMessageBox.warning(self, "ERROR", "Lower Bound of Impact must be a whole number", buttons=QMessageBox.StandardButton.Ok)
+                return None
+            try:
                 risk[5] = int(risk[5])
-                risk[6] = int(risk[6])
+            except ValueError:
+                QMessageBox.warning(self, "ERROR", "Upper Bound of Impact must be a whole number", buttons=QMessageBox.StandardButton.Ok)
+                return None
+            try:
+                risk[6] = float(risk[6])
+            except ValueError:
+                QMessageBox.warning(self, "ERROR", "Total Cost of Controls should be a monetary amount", buttons=QMessageBox.StandardButton.Ok)
+                return None
+            try:
                 risk[7] = float(risk[7])
-        except ValueError:
-            QMessageBox.warning(self, "ERROR", "Check that there are no strings in the numerical column data", buttons=QMessageBox.StandardButton.Ok)
-            return None
-
+            except ValueError:
+                QMessageBox.warning(self, "ERROR", "Control Effectiveness must be a percentage", buttons=QMessageBox.StandardButton.Ok)
+                return None
         return [votesCounted, marginOfVictoryVotes, data]
 
     # TODO Create a new page with LEC and control ranking and swap to it
@@ -249,6 +278,10 @@ class EntryWindow(QMainWindow):
         DataHandling.saveData(electionID, dataProfile)
         if(self.electionIDDropdown.findText(electionID) == -1):
             self.electionIDDropdown.addItem(electionID)
+        
+        index = self.electionIDDropdown.findText(electionID)
+        if index != -1: 
+            self.electionIDDropdown.setCurrentIndex(index)
 
     # Load all data from csv files
     def executeLoadBtnClicked(self):
