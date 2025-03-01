@@ -15,9 +15,10 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QComboBox,
     QStackedWidget,
-    QHeaderView
+    QHeaderView,
+    QMessageBox
 )
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtGui import QIntValidator, QRegularExpressionValidator
 from PyQt6 import QtCore
 import csv
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
@@ -58,9 +59,9 @@ class EntryWindow(QMainWindow):
         self.standardLineEditWidth = 175
         self.standardLineEditHeight = 30
 
-        # TODO only accept str
         self.electionIDField = QLineEdit()
-        self.electionIDField.setPlaceholderText("e.g. mm/dd/yy Race")
+        self.electionIDField.setValidator(QRegularExpressionValidator(QtCore.QRegularExpression("^[a-zA-Z0-9_-]+$")))
+        self.electionIDField.setPlaceholderText("e.g. mm-dd-yy_Race")
         self.electionIDField.setFixedSize(self.standardLineEditWidth, self.standardLineEditHeight)
         self.metaDataEntryLayout.addWidget(self.electionIDField)
 
@@ -181,42 +182,71 @@ class EntryWindow(QMainWindow):
         self.widget.setLayout(self.entryLayout)
         self.setCentralWidget(self.widget)
 
-    # TODO Improve error handling
-
     # Retreive all entered data, returns dataProfile
     def getEnteredData(self):
-        votesCounted = int(self.votesCountedField.text())
-        marginOfVictoryVotes = int(self.marginOfVictoryVotesField.text())
+        try:
+            votesCounted = int(self.votesCountedField.text())
+        except ValueError: 
+            QMessageBox.warning(self, "ERROR", "Number of Votes Counted must be filled", buttons=QMessageBox.StandardButton.Ok)
+            return None
+
+        try:
+            marginOfVictoryVotes = int(self.marginOfVictoryVotesField.text())
+        except ValueError:
+            QMessageBox.warning(self, "ERROR", "Margin of Victory must be filled", buttons=QMessageBox.StandardButton.Ok)
+            return None
+
         # TODO delete excees rows 
-        # TODO error message if important columns missing data/incorrect data type
         data = []
         for row in range(self.dataTable.rowCount()):
             risk = [row+1]
             for column in range(self.dataTable.columnCount()):
-                risk.append(self.dataTable.item(row, column).text())
+                try:
+                    risk.append(self.dataTable.item(row, column).text())
+                except AttributeError:
+                    QMessageBox.warning(self, "ERROR", "Rows must be completely filled", buttons=QMessageBox.StandardButton.Ok)
+                    return None
             data.append(risk)
 
         # correct data formatting
-        for risk in data:
-            risk[0] = int(risk[0])
-            risk[3] = float(risk[3])
-            risk[4] = int(risk[4])
-            risk[5] = int(risk[5])
-            risk[6] = int(risk[6])
-            risk[7] = float(risk[7])
+        try:
+            for risk in data:
+                risk[3] = float(risk[3])
+                risk[4] = int(risk[4])
+                risk[5] = int(risk[5])
+                risk[6] = int(risk[6])
+                risk[7] = float(risk[7])
+        except ValueError:
+            QMessageBox.warning(self, "ERROR", "Check that there are no strings in the numerical column data", buttons=QMessageBox.StandardButton.Ok)
+            return None
 
         return [votesCounted, marginOfVictoryVotes, data]
 
     # TODO Create a new page with LEC and control ranking and swap to it
     # Read all entered data into LEC Generator
     def executeAnalyzeBtnClicked(self):
-        AnalysisWindow.displayInfo(analysisPage)
+        dataProfile = self.getEnteredData()
+        # Error handling
+        if dataProfile is None:
+            return
+
+        AnalysisWindow.displayInfo(analysisPage, dataProfile)
         pages.setCurrentWidget(analysisPage)
 
     # Save all entered data 
     def executeSaveBtnClicked(self):
+        # input validation: no ''
         electionID = self.electionIDField.text()
-        DataHandling.saveData(electionID, self.getEnteredData())
+        if electionID == '':
+            QMessageBox.warning(self, "ERROR", "Election ID must be filled", buttons=QMessageBox.StandardButton.Ok)
+            return
+
+        dataProfile = self.getEnteredData()
+        # Error handling
+        if dataProfile is None:
+            return
+
+        DataHandling.saveData(electionID, dataProfile)
         if(self.electionIDDropdown.findText(electionID) == -1):
             self.electionIDDropdown.addItem(electionID)
 
@@ -226,7 +256,7 @@ class EntryWindow(QMainWindow):
         # Set:
         # Election ID
         self.electionIDField.clear()
-        self.electionIDField.insert(self.electionIDDropdown.currentText()) # TODO Why is this appending instead or replacing like the others?
+        self.electionIDField.insert(self.electionIDDropdown.currentText())
         # Votes Counted
         self.votesCountedField.clear()
         self.votesCountedField.insert(str(dataProfile[0]))
@@ -335,13 +365,12 @@ class AnalysisWindow(QMainWindow):
         self.widget.setLayout(self.analysisLayout)
         self.setCentralWidget(self.widget)
 
-    def displayInfo(self):
-        self.dataProfile = entryPage.getEnteredData()
-        self.votesCounted = self.dataProfile[0]
-        self.marginOfVictoryVotes = self.dataProfile[1]
+    def displayInfo(self, dataProfile):
+        self.votesCounted = dataProfile[0]
+        self.marginOfVictoryVotes = dataProfile[1]
 
         # Loss Exceedance Curve
-        analysisValues = DataHandling.analyzeData(self.dataProfile)
+        analysisValues = DataHandling.analyzeData(dataProfile)
         self.xValues = analysisValues[0] 
         self.yValues = analysisValues[1]
         self.marginOfVictoryPercentage = analysisValues[2]
