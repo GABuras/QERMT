@@ -1,4 +1,5 @@
 # Author: George Adler Buras
+
 import DataHandling
 
 from PyQt6.QtWidgets import (
@@ -13,16 +14,16 @@ from PyQt6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QComboBox,
-    QStackedWidget
+    QStackedWidget,
+    QHeaderView
 )
 from PyQt6.QtGui import QIntValidator
+from PyQt6 import QtCore
 import csv
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.ticker as mtick
 from matplotlib.text import Annotation
-
-# TODO Either make table stretech all the way across, or move buttons to right side
 
 # TODO Create more breathing room
 
@@ -108,8 +109,9 @@ class EntryWindow(QMainWindow):
         self.dataTableHeaderLabels = ["Risk Name", "Type of Vote Manipulation\n(Adding, Subtracting, or Changing)", "Probability of Manipulation\nOver 1 Election Cycle", "Lower Bound of Impact\n(95% Chance Value Is Higher)", "Upper Bound of Impact\n(95% Chance Value Is Lower)", "Total Cost of Controls", "Control Effectiveness"]
         self.dataTable.setHorizontalHeaderLabels(self.dataTableHeaderLabels)
 
-        for c in range(len(self.dataTableHeaderLabels)):
-            self.dataTable.setColumnWidth(c, 200)
+        self.dataTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        # TODO enforce % and $ on necesairy columns
 
         self.dataEntryLayout.addWidget(self.dataTable)
 
@@ -140,7 +142,7 @@ class EntryWindow(QMainWindow):
         self.loadBtn.setFont(self.standardBtnFont)
         self.buttonsLayout.addWidget(self.loadBtn)
 
-        # TODO Improve visual clarity
+        # TODO Improve visual clarity: popup window when load/delete clicked with dropdown in it
         # electionID picker for loadBtn and deleteBtn
         self.electionIDDropdown = QComboBox()
         self.electionIDDropdown.setFixedSize(self.standardBtnWidth, self.standardBtnHeight)
@@ -269,21 +271,19 @@ class AnalysisWindow(QMainWindow):
         self.infoLayout = QHBoxLayout()
         self.analysisLayout.addLayout(self.infoLayout)
 
-
-        # TODO Consider ...Figure(tight_layout=True)
+        # Loss Exceedance Curve
         self.lossExceedanceCurveCanvas = FigureCanvas(Figure())
         self.lossExceedanceCurveAx = self.lossExceedanceCurveCanvas.figure.subplots()
         self.xValues = []
         self.yValues = []
         self.line, = self.lossExceedanceCurveAx.plot(self.xValues, self.yValues)
 
-        # TODO LEC Formatting
-        # self.lossExceedanceCurveAx.annotate("Margin of Victory\n(%.4f%%, %.4f%%)"%(marginOfVictoryPercentage*100, marginOfVictoryY*100), xy=(marginOfVictoryPercentage, marginOfVictoryY), xytext=(marginOfVictoryPercentage-0.005, marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
         self.lossExceedanceCurveAx.set_title("Loss Exceedance Curve")
         self.lossExceedanceCurveAx.set_xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
         self.lossExceedanceCurveAx.set_ylabel("Chance of Margin of Manipulation or Greater")
         self.lossExceedanceCurveAx.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
 
+        # TODO this is probably not necessary with the right if statements
         self.marginOfVictoryAnnotation = Annotation("temp", (0,0))
         self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
 
@@ -296,6 +296,22 @@ class AnalysisWindow(QMainWindow):
 
         self.infoLayout.addLayout(self.graphLayout)
 
+        # Control ranking Table
+        self.controlRankingTable = QTableWidget()
+
+        # TODO imporve names for last 2 columns
+        self.controlRankingTable.setColumnCount(6)
+        self.controlRankingTableHeaderLabels = ["Risk ID", "Risk Name", "Total Cost of Controls", "Control Effectiveness", "votes/dollar", "dollars/vote"]
+        self.controlRankingTable.setHorizontalHeaderLabels(self.controlRankingTableHeaderLabels)
+        # self.controlRankingTable.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
+        self.controlRankingTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        # TODO Enforce % and $ on necessary columns
+
+        self.infoLayout.addWidget(self.controlRankingTable)
+
+
+        # TODO Buttons to swap view between LEC, Control Ranking, and both
         # Buttons
         self.buttonsLayout = QHBoxLayout()
         self.analysisLayout.addLayout(self.buttonsLayout)
@@ -312,6 +328,8 @@ class AnalysisWindow(QMainWindow):
         self.analysisLayout.addWidget(self.backBtn)
 
         # TODO Rerun Simulations Button
+    
+        # TODO Variable number of simulations
 
         self.widget = QWidget()
         self.widget.setLayout(self.analysisLayout)
@@ -323,11 +341,12 @@ class AnalysisWindow(QMainWindow):
         self.marginOfVictoryVotes = self.dataProfile[1]
 
         # Loss Exceedance Curve
-        graphValues = DataHandling.analyzeData(self.dataProfile)
-        self.xValues = graphValues[0] 
-        self.yValues = graphValues[1]
-        self.marginOfVictoryPercentage = graphValues[2]
-        self.marginOfVictoryY = graphValues[3]
+        analysisValues = DataHandling.analyzeData(self.dataProfile)
+        self.xValues = analysisValues[0] 
+        self.yValues = analysisValues[1]
+        self.marginOfVictoryPercentage = analysisValues[2]
+        self.marginOfVictoryY = analysisValues[3]
+        self.controlRanking = analysisValues[4]
 
         self.line.set_data(self.xValues, self.yValues)
 
@@ -344,10 +363,22 @@ class AnalysisWindow(QMainWindow):
 
         self.line.figure.canvas.draw()
 
-        # TODO Replace graph instead of adding another one
-        # Can I simply move everything to init except lossExceedance Curve Update?
+        # TODO Add second x axis scale for "Manipulated Votes"
 
-        # TODO Display Control Ranking
+
+        # Display Control Ranking
+        self.controlRankingTable.clearContents()
+        self.controlRankingTable.setRowCount(len(self.controlRanking))
+
+        for row in range(len(self.controlRanking)):
+            for column in range(len(self.controlRanking[0])):
+                # self.controlRankingTable.setItem(row, column, QTableWidgetItem(str(self.controlRanking[row][column])))
+                
+                item = QTableWidgetItem()
+                item.setText(str(self.controlRanking[row][column]))
+                item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                self.controlRankingTable.setItem(row, column, item)
+        # self.controlRankingTable.resizeColumnsToContents()
 
 
 
@@ -371,10 +402,6 @@ if __name__ == '__main__':
 
     pages.setCurrentWidget(entryPage)
     pages.showMaximized()
-
-    # Create and display main window
-    # window = MainWindow()
-    # window.showMaximized()
 
     # Start the event loop.
     app.exec()

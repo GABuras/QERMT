@@ -1,20 +1,10 @@
 # Author: George Adler Buras
 
 import numpy as np
-import matplotlib.pyplot as plt
 import csv
-import matplotlib.ticker as mtick
 import os
-# from tabulate import tabulate
 
 # TODO Better error handling (especially for files)
-
-
-# electionID = "sample"
-# data = []
-# print(tabulate(data, headers=header, tablefmt="grid"))
-# votesCounted = 0
-# marginOfVictoryVotes = 0
 
 # saves data to csv files
 def saveData(electionID: str, dataProfile):
@@ -129,15 +119,17 @@ def analyzeData(dataProfile):
     marginOfVictoryVotes = dataProfile[1]
     data =  dataProfile[2]
 
-    # Doing the math
-
     # TODO do I want to seed random numbers?
     # tie seed to simulation number?
     rng = np.random.default_rng()
 
-    totalImpacts = []
+    # List of total impact for each simulation
+    simulatedImpacts = []
 
-    # Iterate through 10k simulations
+    # List of total impact for each risk
+    riskImpacts = [0] * len(data)
+
+    # Iterate through 10k simulations, as recomended by book. Increasing gives more consistent results
     numberOfSimulations = 10000
     for s in range(numberOfSimulations):
 
@@ -164,14 +156,16 @@ def analyzeData(dataProfile):
                 # Add impact to total for this simulation
                 totalImpact += riskImpact
 
+                # TODO Track the impact of each risk
+                riskImpacts[i] += riskImpact
+
         # print("Total Impact: " + str(totalImpact))
 
         # Track total impact for each simulation
-        totalImpacts.append(totalImpact)
+        simulatedImpacts.append(totalImpact)
 
-    # print(totalImpacts)
-
-
+    # print(simulatedImpacts)
+    # print(riskImpacts)
 
 
     # Calculate loss exceedance curve
@@ -184,7 +178,7 @@ def analyzeData(dataProfile):
 
     for x in xValues:
         yValue = 0
-        for t in totalImpacts:
+        for t in simulatedImpacts:
             if t > (x * votesCounted): 
                 yValue += 1
         yValues.append(yValue/numberOfSimulations)
@@ -192,20 +186,47 @@ def analyzeData(dataProfile):
     # print(yValues)
 
     marginOfVictoryY = 0
-    for t in totalImpacts:
+    for t in simulatedImpacts:
         if t > marginOfVictoryVotes:
             marginOfVictoryY += 1
     marginOfVictoryY = marginOfVictoryY/numberOfSimulations
 
-    # TODO Calculate Control Ranking
+    # Calculate Control Ranking
+    avgRiskImpacts = []
+    for riskImpact in riskImpacts:
+        avgRiskImpacts.append(riskImpact/numberOfSimulations)
 
-    return [xValues, yValues, marginOfVictoryPercentage, marginOfVictoryY]
+    # print(avgRiskImpacts)
 
-    # TODO Add second x axis scale for "Manipulated Votes"
+    # Average number of manipulated votes from a particular risk mitigated per dollar spent on implementing all controls for that risk
+    mitigatedManipulatedVotePerControlDollar = []
+    for risk in range(len(avgRiskImpacts)):
+        # (avgRiskImpact * controlEffectiveness) / totalControlCost
+        mitigatedManipulatedVotePerControlDollar.append((avgRiskImpacts[risk] * data[risk][7]) / data[risk][6])
+
+    # print(mitigatedManipulatedVotePerControlDollar)
+
+    # Average control cost of mitigating a single manipulated vote
+    controlCostPerMitigatedManipulatedVote = []
+    for risk in range(len(avgRiskImpacts)):
+        # totalControlCost / (avgRiskImpact * controlEffectiveness)
+        controlCostPerMitigatedManipulatedVote.append(data[risk][6] / (avgRiskImpacts[risk] * data[risk][7]))
+
+    # print(controlCostPerMitigatedManipulatedVote)
+
+    # Control Ranking to be displayed
+    controlRanking = []
+    for risk in range(len(data)):
+        # [Risk ID, Risk Name, Total Cost of Controls, Control Effectiveness, votes/dollar, dollars/vote]
+        controlRanking.append([data[risk][0], data[risk][1], data[risk][6], data[risk][7], mitigatedManipulatedVotePerControlDollar[risk], controlCostPerMitigatedManipulatedVote[risk]])
+
+    controlRanking = sorted(controlRanking, key=lambda x: x[5])
+
+    # print(controlRanking)
+
+    return [xValues, yValues, marginOfVictoryPercentage, marginOfVictoryY, controlRanking]
 
     # TODO Test with sample data from book
-
-    # TODO "QCoreApplication::exec: The event loop is already running"
 
 # TODO Doublecheck everything for spelling
 
