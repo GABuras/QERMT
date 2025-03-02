@@ -28,6 +28,8 @@ from matplotlib.text import Annotation
 
 # TODO Create more breathing room
 
+# TODO Double check "self"s
+
 # Subclass QMainWindow to customize application's data entry window
 class EntryWindow(QMainWindow):
     def __init__(self):
@@ -44,13 +46,6 @@ class EntryWindow(QMainWindow):
         standardMetaDataFont.setPointSize(15)
         self.metaSpacingLabel.setFont(standardMetaDataFont)
         self.metaDataEntryLayout.addWidget(self.metaSpacingLabel)
-
-        # TODO do I need these labels, or can I do like:
-        # layout = QFormLayout()
-        # layout.addRow("Integers:", self.int_line_edit)
-        # layout.addRow("Uppercase letters:", self.uppercase_line_edit)
-        # layout.addRow("Signal:", self.signal_label)
-        # self.setLayout(layout)
 
         self.electionIDLabel = QLabel("Election ID:")
         self.electionIDLabel.setFont(standardMetaDataFont)
@@ -81,11 +76,30 @@ class EntryWindow(QMainWindow):
 
         self.metaDataEntryLayout.addWidget(self.metaSpacingLabel)
 
-        # TODO Improve ToolTip; it's too slow and appearing below is not ideal
-        self.marginOfVictoryVotesLabel = QLabel("[Expected] Margin of Victory in Votes*:")
+        self.marginOfVictoryVotesLabel = QLabel("[Expected] Margin of Victory in Votes \U0001F6C8:")
         self.marginOfVictoryVotesLabel.setFont(standardMetaDataFont)
         self.marginOfVictoryVotesLabel.setToolTip("(First Place Votes - Second Place Votes)")
         self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesLabel)
+
+
+        # This code makes the tooltip only appear when hovering over the info icon, but it destroys my formatting. 
+        # Use if I ever swap to a grid layout
+        # self.marginOfVictoryVotesLabel0 = QLabel("[Expected] Margin of Victory in Votes ")
+        # self.marginOfVictoryVotesLabel0.setFont(standardMetaDataFont)
+        # self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesLabel0)
+
+        # self.marginOfVictoryVotesLabel1 = QLabel("\U0001F6C8")
+        # self.marginOfVictoryVotesLabel1.setFont(standardMetaDataFont)
+        # self.marginOfVictoryVotesLabel1.setToolTip("(First Place Votes - Second Place Votes)")
+        # self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesLabel1)
+
+        # self.marginOfVictoryVotesLabel2 = QLabel(":")
+        # self.marginOfVictoryVotesLabel2.setFont(standardMetaDataFont)
+        # self.metaDataEntryLayout.addWidget(self.marginOfVictoryVotesLabel2)
+
+
+
+
 
         # Max value is 2147483647 because signed int. To increase, must extend QIntValidator
         self.marginOfVictoryVotesField = QLineEdit()
@@ -362,12 +376,16 @@ class AnalysisWindow(QMainWindow):
         # Control ranking Table
         self.controlRankingTable = QTableWidget()
 
-        # TODO imporve names for last 2 columns
         self.controlRankingTable.setColumnCount(6)
-        self.controlRankingTableHeaderLabels = ["Risk ID", "Risk Name", "Total Cost of Controls", "Control Effectiveness", "votes/dollar", "dollars/vote"]
+        self.controlRankingTableHeaderLabels = ["Risk ID", "Risk Name", "Total Cost of Controls", "Control Effectiveness", "Votes/Dollar \U0001F6C8", "Dollars/Vote \U0001F6C8"]
         self.controlRankingTable.setHorizontalHeaderLabels(self.controlRankingTableHeaderLabels)
         # self.controlRankingTable.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.controlRankingTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        # Add tooltip to last two column headers
+        self.controlRankingTable.horizontalHeaderItem(4).setToolTip("The average number of manipulated votes mitigated per dollar spent if all controls for this risk are implemented")
+        self.controlRankingTable.horizontalHeaderItem(5).setToolTip("The average cost of mitigating a single manipulated vote if all controls for this risk are implemented")
+
 
         # TODO Enforce % and $ on necessary columns
 
@@ -418,15 +436,18 @@ class AnalysisWindow(QMainWindow):
         self.lossExceedanceCurveAx.xaxis.set_major_formatter(mtick.PercentFormatter(1))
         self.lossExceedanceCurveAx.yaxis.set_major_formatter(mtick.PercentFormatter(1))
 
+        # Add second x axis scale for "Manipulated Votes"
+        self.lossExceedanceCurveSecAx = self.lossExceedanceCurveAx.secondary_xaxis('top', functions=(lambda x: x*self.votesCounted, lambda x: x/self.votesCounted))
+        self.lossExceedanceCurveSecAx.set_xlabel("Manipulated Votes")
+        # TODO Improve formatting when Manipulated Votes enters e teritory
+        # self.lossExceedanceCurveSecAx.xaxis.set_major_formatter(...)
+
         # Label Margin of Victory Percentage
         self.marginOfVictoryAnnotation.remove()
         self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.4f%%, %.4f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=(self.marginOfVictoryPercentage-0.005, self.marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
         self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
 
         self.line.figure.canvas.draw()
-
-        # TODO Add second x axis scale for "Manipulated Votes"
-
 
         # Display Control Ranking
         self.controlRankingTable.clearContents()
