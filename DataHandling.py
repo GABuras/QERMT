@@ -66,7 +66,7 @@ def loadData(electionID: str):
             risk[3] = float(risk[3])
             risk[4] = int(risk[4])
             risk[5] = int(risk[5])
-            risk[6] = int(risk[6])
+            risk[6] = float(risk[6])
             risk[7] = float(risk[7])
         # print(data)
 

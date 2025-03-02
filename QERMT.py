@@ -30,6 +30,8 @@ from matplotlib.text import Annotation
 
 # TODO Double check "self"s
 
+# TODO Don't crash when loading nothing
+
 # Subclass QMainWindow to customize application's data entry window
 class EntryWindow(QMainWindow):
     def __init__(self):
@@ -360,10 +362,8 @@ class AnalysisWindow(QMainWindow):
         self.lossExceedanceCurveAx.set_ylabel("Chance of Margin of Manipulation or Greater")
         self.lossExceedanceCurveAx.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
 
-        # TODO this is probably not necessary with the right if statements
         self.marginOfVictoryAnnotation = Annotation("temp", (0,0))
         self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
-
 
         self.graphLayout = QVBoxLayout()
         self.graphLayout.addWidget(self.lossExceedanceCurveCanvas)
@@ -443,6 +443,7 @@ class AnalysisWindow(QMainWindow):
         # self.lossExceedanceCurveSecAx.xaxis.set_major_formatter(...)
 
         # Label Margin of Victory Percentage
+        # TODO Improve to look good regardless of data
         self.marginOfVictoryAnnotation.remove()
         self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.4f%%, %.4f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=(self.marginOfVictoryPercentage-0.005, self.marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
         self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
