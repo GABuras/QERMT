@@ -30,7 +30,9 @@ from matplotlib.text import Annotation
 
 # TODO Double check "self"s
 
-# TODO Don't crash when loading nothing
+# TODO Don't crash when loading nothing; solve with load button > pop-up window with either dropdown of saved electionIDs or notice saying there are none; delete probably needs similar treatment
+
+# TODO Include instructions for calibration training
 
 # Subclass QMainWindow to customize application's data entry window
 class EntryWindow(QMainWindow):
@@ -386,8 +388,8 @@ class AnalysisWindow(QMainWindow):
         self.controlRankingTable.horizontalHeaderItem(4).setToolTip("The average number of manipulated votes mitigated per dollar spent if all controls for this risk are implemented")
         self.controlRankingTable.horizontalHeaderItem(5).setToolTip("The average cost of mitigating a single manipulated vote if all controls for this risk are implemented")
 
-
         # TODO Enforce % and $ on necessary columns
+
 
         self.infoLayout.addWidget(self.controlRankingTable)
 
@@ -464,11 +466,8 @@ class AnalysisWindow(QMainWindow):
                 self.controlRankingTable.setItem(row, column, item)
         # self.controlRankingTable.resizeColumnsToContents()
 
-
-
     def executeBackBtnClicked(self):
         pages.setCurrentWidget(entryPage)
-
 
 
 if __name__ == '__main__':
