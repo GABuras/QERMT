@@ -34,6 +34,14 @@ from matplotlib.text import Annotation
 
 # TODO Include instructions for calibration training
 
+# TODO Update README with description, instalation, and run instructions
+
+# TODO Allow saving incomplete data
+
+# TODO Add "Are you sure" pop-up to Clear All button
+
+# TODO Add info about number of simulations and variance
+
 # Subclass QMainWindow to customize application's data entry window
 class EntryWindow(QMainWindow):
     def __init__(self):
