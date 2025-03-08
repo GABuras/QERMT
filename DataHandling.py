@@ -119,8 +119,6 @@ def analyzeData(dataProfile):
     marginOfVictoryVotes = dataProfile[1]
     data =  dataProfile[2]
 
-    # TODO do I want to seed random numbers?
-    # tie seed to simulation number?
     rng = np.random.default_rng()
 
     # List of total impact for each simulation
@@ -156,7 +154,7 @@ def analyzeData(dataProfile):
                 # Add impact to total for this simulation
                 totalImpact += riskImpact
 
-                # TODO Track the impact of each risk
+                # Track the impact of each risk
                 riskImpacts[i] += riskImpact
 
         # print("Total Impact: " + str(totalImpact))
@@ -171,7 +169,8 @@ def analyzeData(dataProfile):
     # Calculate loss exceedance curve
 
     marginOfVictoryPercentage = marginOfVictoryVotes / votesCounted
-    xValues = np.linspace(0, marginOfVictoryPercentage * 1.5, 151)
+    # xValues = np.linspace(0, marginOfVictoryPercentage * 1.5, 151)
+    xValues = np.linspace(0, 1, 3001)
     # print(xValues)
 
     yValues = []

@@ -42,10 +42,6 @@ from matplotlib.text import Annotation
 
 # TODO Add info about number of simulations and variance
 
-# TODO Make graph longer on the right, but set zoom window to where it is now. That way people can pan to the right.
-
-# TODO Improve Margin of Victory annotation. Dynamic height and stuff, seems fixed right now. Why is it not always toutching the line and centered on the arrow?
-
 # Subclass QMainWindow to customize application's data entry window
 class EntryWindow(QMainWindow):
     def __init__(self):
@@ -281,7 +277,6 @@ class EntryWindow(QMainWindow):
                 return None
         return [votesCounted, marginOfVictoryVotes, data]
 
-    # TODO Create a new page with LEC and control ranking and swap to it
     # Read all entered data into LEC Generator
     def executeAnalyzeBtnClicked(self):
         dataProfile = self.getEnteredData()
@@ -444,7 +439,8 @@ class AnalysisWindow(QMainWindow):
 
         self.line.set_data(self.xValues, self.yValues)
 
-        self.lossExceedanceCurveAx.set_xlim(min(self.xValues), max(self.xValues))
+        self.displayXMax = self.marginOfVictoryPercentage*1.5
+        self.lossExceedanceCurveAx.set_xlim(min(self.xValues), self.displayXMax)
         self.lossExceedanceCurveAx.set_ylim(0, max(self.yValues) + 0.01)
 
         self.lossExceedanceCurveAx.xaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -457,9 +453,8 @@ class AnalysisWindow(QMainWindow):
         # self.lossExceedanceCurveSecAx.xaxis.set_major_formatter(...)
 
         # Label Margin of Victory Percentage
-        # TODO Improve to look good regardless of data
         self.marginOfVictoryAnnotation.remove()
-        self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.4f%%, %.4f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=(self.marginOfVictoryPercentage-0.005, self.marginOfVictoryY+0.15), arrowprops=dict(facecolor = 'red', shrink = 0.05),)
+        self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.2f%%, %.2f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=((self.displayXMax-self.marginOfVictoryPercentage)*0.15 + self.marginOfVictoryPercentage, (max(self.yValues)-self.marginOfVictoryY)*0.2 + self.marginOfVictoryY), arrowprops=dict(facecolor = 'red'),)
         self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
 
         self.line.figure.canvas.draw()
