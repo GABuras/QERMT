@@ -202,7 +202,10 @@ def analyzeData(dataProfile):
     mitigatedManipulatedVotePerControlDollar = []
     for risk in range(len(avgRiskImpacts)):
         # (avgRiskImpact * controlEffectiveness) / totalControlCost
-        mitigatedManipulatedVotePerControlDollar.append((avgRiskImpacts[risk] * data[risk][7]) / data[risk][6])
+        try:
+            mitigatedManipulatedVotePerControlDollar.append((avgRiskImpacts[risk] * data[risk][7]) / data[risk][6])
+        except ZeroDivisionError:
+            mitigatedManipulatedVotePerControlDollar.append(np.nan)
 
     # print(mitigatedManipulatedVotePerControlDollar)
 
@@ -210,7 +213,10 @@ def analyzeData(dataProfile):
     controlCostPerMitigatedManipulatedVote = []
     for risk in range(len(avgRiskImpacts)):
         # totalControlCost / (avgRiskImpact * controlEffectiveness)
-        controlCostPerMitigatedManipulatedVote.append(data[risk][6] / (avgRiskImpacts[risk] * data[risk][7]))
+        try:
+            controlCostPerMitigatedManipulatedVote.append(data[risk][6] / (avgRiskImpacts[risk] * data[risk][7]))
+        except ZeroDivisionError:
+            controlCostPerMitigatedManipulatedVote.append(np.nan)
 
     # print(controlCostPerMitigatedManipulatedVote)
 
@@ -220,7 +226,7 @@ def analyzeData(dataProfile):
         # [Risk ID, Risk Name, Total Cost of Controls, Control Effectiveness, votes/dollar, dollars/vote]
         controlRanking.append([data[risk][0], data[risk][1], data[risk][6], data[risk][7], mitigatedManipulatedVotePerControlDollar[risk], controlCostPerMitigatedManipulatedVote[risk]])
 
-    controlRanking = sorted(controlRanking, key=lambda x: x[5])
+    controlRanking = sorted(controlRanking, key=lambda x: np.inf if (x[5] != x[5]) else x[5])
 
     # print(controlRanking)
 

@@ -42,6 +42,10 @@ from matplotlib.text import Annotation
 
 # TODO Add info about number of simulations and variance
 
+# TODO Make graph longer on the right, but set zoom window to where it is now. That way people can pan to the right.
+
+# TODO Improve Margin of Victory annotation. Dynamic height and stuff, seems fixed right now. Why is it not always toutching the line and centered on the arrow?
+
 # Subclass QMainWindow to customize application's data entry window
 class EntryWindow(QMainWindow):
     def __init__(self):
@@ -287,7 +291,7 @@ class EntryWindow(QMainWindow):
 
         AnalysisWindow.displayInfo(analysisPage, dataProfile)
         pages.setCurrentWidget(analysisPage)
-
+ 
     # Save all entered data 
     def executeSaveBtnClicked(self):
         # input validation: no ''
