@@ -1,0 +1,12 @@
+Risk ID,Risk Name,"Type of Vote Manipulation (Adding, Subtracting, or Changing)",Probability of Manipulation Over 1 Election Cycle,Lower Bound of Impact (95% Chance Value Is Higher),Upper Bound of Impact (95% Chance Value Is Lower),Total Cost of Controls,Control Effectiveness
+1,[REDACTED 1],Subtracting,0.05,1000,150000,1000000.0,0.9
+2,[REDACTED 2],Changing,0.02,1000,50000,10000.0,0.97
+3,[REDACTED 3],Changing,0.0025,10000,500000,150000.0,0.97
+4,[REDACTED 4],Subtracting,0.005,5000,200000,500000.0,0.95
+5,[REDACTED 5],Adding,0.01,1000,100000,1000000.0,0.8
+6,[REDACTED 6],Changing,0.003,10000,500000,50000000.0,0.99
+7,[REDACTED 7],Changing,0.002,10000,500000,100000.0,0.75
+8,[REDACTED 8],"Changing, Adding, Subtracting",0.015,100,30000,100000.0,1.0
+9,[REDACTED 9],"Changing, Adding, Subtracting",0.001,2000,1000000,150000.0,0.999
+10,[REDACTED 10],Subtracting,0.01,1000,250000,1000000.0,0.9
+11,[REDACTED 11],Subtracting,0.02,2000,150000,500000.0,0.8
