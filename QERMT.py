@@ -25,6 +25,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.ticker as mtick
 from matplotlib.text import Annotation
+import numpy as np
 
 # TODO Create more breathing room
 
@@ -465,12 +466,35 @@ class AnalysisWindow(QMainWindow):
 
         for row in range(len(self.controlRanking)):
             for column in range(len(self.controlRanking[0])):
-                # self.controlRankingTable.setItem(row, column, QTableWidgetItem(str(self.controlRanking[row][column])))
-                
-                item = QTableWidgetItem()
-                item.setText(str(self.controlRanking[row][column]))
-                item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
-                self.controlRankingTable.setItem(row, column, item)
+                if column == 2 or column == 5:
+                    if np.isnan(self.controlRanking[row][column]): 
+                        item = QTableWidgetItem()
+                        item.setText(str(self.controlRanking[row][column]))
+                        item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                        self.controlRankingTable.setItem(row, column, item)
+                    else: 
+                        # Format in dollars
+                        item = QTableWidgetItem()
+                        item.setText("${:,.2f}".format(self.controlRanking[row][column]))
+                        item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                        self.controlRankingTable.setItem(row, column, item)
+                elif column == 3:
+                    # Format as a percentage
+                    item = QTableWidgetItem()
+                    item.setText("{:g}%".format(self.controlRanking[row][column]*100))
+                    item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                    self.controlRankingTable.setItem(row, column, item)
+                elif column == 4:
+                    item = QTableWidgetItem()
+                    item.setText("{:,.3f}".format(self.controlRanking[row][column]))
+                    item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                    self.controlRankingTable.setItem(row, column, item)
+                else:
+                    item = QTableWidgetItem()
+                    item.setText(str(self.controlRanking[row][column]))
+                    item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                    self.controlRankingTable.setItem(row, column, item)
+            
         # self.controlRankingTable.resizeColumnsToContents()
 
     def executeBackBtnClicked(self):
