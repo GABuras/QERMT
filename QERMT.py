@@ -368,8 +368,10 @@ class AnalysisWindow(QMainWindow):
         self.line, = self.lossExceedanceCurveAx.plot(self.xValues, self.yValues)
 
         self.lossExceedanceCurveAx.set_title("Loss Exceedance Curve")
-        self.lossExceedanceCurveAx.set_xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
-        self.lossExceedanceCurveAx.set_ylabel("Chance of Margin of Manipulation or Greater")
+        # self.lossExceedanceCurveAx.set_xlabel("Margin of Manipulation (Manipulated Votes / Counted Votes)")
+        self.lossExceedanceCurveAx.set_xlabel("Margin of Victory")
+        # self.lossExceedanceCurveAx.set_ylabel("Chance of Margin of Manipulation or Greater")
+        self.lossExceedanceCurveAx.set_ylabel("Largest Possible Chance that the Election's Outcome is Incorrect")
         self.lossExceedanceCurveAx.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
 
         self.marginOfVictoryAnnotation = Annotation("temp", (0,0))
@@ -393,8 +395,8 @@ class AnalysisWindow(QMainWindow):
         self.controlRankingTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         # Add tooltip to last two column headers
-        self.controlRankingTable.horizontalHeaderItem(4).setToolTip("The average number of manipulated votes mitigated per dollar spent if all controls for this risk are implemented")
-        self.controlRankingTable.horizontalHeaderItem(5).setToolTip("The average cost of mitigating a single manipulated vote if all controls for this risk are implemented")
+        self.controlRankingTable.horizontalHeaderItem(4).setToolTip("The expected average number of manipulated votes mitigated per dollar spent if all controls for this risk are implemented")
+        self.controlRankingTable.horizontalHeaderItem(5).setToolTip("The expected average cost of mitigating a single manipulated vote if all controls for this risk are implemented")
 
         # TODO Enforce % and $ on necessary columns
 
@@ -440,7 +442,7 @@ class AnalysisWindow(QMainWindow):
 
         self.line.set_data(self.xValues, self.yValues)
 
-        self.displayXMax = self.marginOfVictoryPercentage*1.5
+        self.displayXMax = self.marginOfVictoryPercentage*2
         self.lossExceedanceCurveAx.set_xlim(min(self.xValues), self.displayXMax)
         self.lossExceedanceCurveAx.set_ylim(0, max(self.yValues) + 0.01)
 
@@ -449,13 +451,15 @@ class AnalysisWindow(QMainWindow):
 
         # Add second x axis scale for "Manipulated Votes"
         self.lossExceedanceCurveSecAx = self.lossExceedanceCurveAx.secondary_xaxis('top', functions=(lambda x: x*self.votesCounted, lambda x: x/self.votesCounted))
-        self.lossExceedanceCurveSecAx.set_xlabel("Manipulated Votes")
+        # self.lossExceedanceCurveSecAx.set_xlabel("Manipulated Votes")
+        self.lossExceedanceCurveSecAx.set_xlabel("Number of Votes the Winner Won By")
         # TODO Improve formatting when Manipulated Votes enters e teritory
         # self.lossExceedanceCurveSecAx.xaxis.set_major_formatter(...)
 
         # Label Margin of Victory Percentage
         self.marginOfVictoryAnnotation.remove()
-        self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.2f%%, %.2f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=((self.displayXMax-self.marginOfVictoryPercentage)*0.15 + self.marginOfVictoryPercentage, (max(self.yValues)-self.marginOfVictoryY)*0.2 + self.marginOfVictoryY), arrowprops=dict(facecolor = 'red'),)
+        # self.marginOfVictoryAnnotation = Annotation("Margin of Victory\n(%.2f%%, %.2f%%)"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=((self.displayXMax-self.marginOfVictoryPercentage)*0.15 + self.marginOfVictoryPercentage, (max(self.yValues)-self.marginOfVictoryY)*0.2 + self.marginOfVictoryY), arrowprops=dict(facecolor = 'red'),)
+        self.marginOfVictoryAnnotation = Annotation("Margin of Victory: %.2f%%\nChance Election is Insecure: %.2f%%"%(self.marginOfVictoryPercentage*100, self.marginOfVictoryY*100), xy=(self.marginOfVictoryPercentage, self.marginOfVictoryY), xytext=((self.displayXMax-self.marginOfVictoryPercentage)*0.15 + self.marginOfVictoryPercentage, (max(self.yValues)-self.marginOfVictoryY)*0.2 + self.marginOfVictoryY), bbox=dict(boxstyle="square", fc="w"), arrowprops=dict(facecolor = 'red'),)
         self.lossExceedanceCurveAx.add_artist(self.marginOfVictoryAnnotation)
 
         self.line.figure.canvas.draw()
